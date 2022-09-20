@@ -12,16 +12,14 @@ This step is run from the code '****' and performs automatic segmentation of the
 
 **Output:** Automatically segmented images (.nii), Jaccard index & Hausdorff distance (.txt)
 
+**System Requirements:**
+need to add
+
 **Instructions:** The user needs to upload a zipped directory containing the following folders: 
 1. The user should create an **"input"** folder that contains the acquired imaging data with file with names **19f, t2** and **fat**. These files can either be in the .nii or the .nii.gz format. Note that the input dimension of these images is fixed (see below).
 
 2. The user should crease an **"output"** folder that contains a few manually segmented examples for each tissue to be segmented. This is to allow masking of the spinal cord for better performance. The files should have the following names:
-- csf.nii.gz
-- dorsalroots.nii.gz
-- epiduralfat.nii.gz
-- graymatter.nii.gz
-- ventralroots.nii.gz
-- whitematter.nii.gz
+csf.nii.gz, dorsalroots.nii.gz, epiduralfat.nii.gz, graymatter.nii.gz, ventralroots.nii.gz, whitematter.nii.gz
 
 3. Run the code '****' from the folder containing the "input" and "output" folders.
 
