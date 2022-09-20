@@ -65,4 +65,20 @@ This step is run from the code 'run_complex_model.py' and includes building a fi
 
 After results are saved from the neuron simulation, run plot_analysis_scale.ipynb to re-scale these values to the correct ratio of neurons per root and view initial plots of recruitment values for a simulation. This step will also output a series of recruitment curve values in a text file that can be used in Step 3. 
 
-Step 3: Simulate bladder function
+## Step 3: Simulate bladder function
+
+Step 3 includes a spiking neural network model that receives inputs generaged from upstream FEM model for experiment validation and exploration. 
+
+The model needs [NEURON](https://www.neuron.yale.edu/neuron/) installed to perform normally. Please follow the *README.ipynb* notebook to compile the environment and preprocess the data before running a simulation.
+
+We provide two options for running a simulation: 
+
+1. use computed recruitment_threshold_percentage (only pudendal afferents are recruited and simulated) to validate bladder behavior under specific pudendal afferent recruitment
+
+2. use recruitment curve data (pudendal afferent, pelvic afferent and SPN are recruited at different stimulation amplitude (uA)) and explore the bladder behavior at any customized stimulation amplitude by defining "stim_amp_uA". 
+
+For option 2, the "splitting" and "mapping" steps in *recruitment data splitter.ipynb* is necessary.
+
+All results are stored in ../results. There is also an analysis script Analysis on bladder traces and neuron firings.ipynb to provide some simple processing of data. The details of results are listed in *README.ipynb*.
+
+
