@@ -1,7 +1,7 @@
 # scs_model
 Code for computational modeling of spinal cord stimulation to evoke lower urinary tract nerve activity and bladder pressures.
 
-##STEPS: 
+## STEPS: 
 
 ## Step 1: Image segmentation and tractography
 
@@ -28,6 +28,7 @@ This step is run from the code '****' and performs automatic segmentation of the
 4. Check the segmentation results.
 
 The default Neural Network (hybrid cat1-cat3) used in this node was trained with manual segmentations of 2 cat lumbosacral spine samples distributed along the cord (cat spine 1: 207 slices & cat spine 3: 176 slices). Note that to use this network, the raw images have to be of 384 x 512 pixel dimension in the axial plane.
+
 ![Asset 3](https://user-images.githubusercontent.com/43448105/191312158-00045d2b-d32c-4bdf-8836-307683e137f6.png)
 
 **Limitations**: This pipeline currently does not support training new weights for the Neural Network. If the user has data that is substantially different from the cat lumbosacral spine (ex. cat cervical spine) and simply running the default does not give satisfactory segmentations, the user may upload a Neural Network pre-trained with manual segmentation of the user’s data. To generate this pre-trained Network in the correct .pickle format, contact Alessandro Fasse (fasse@zmt.swiss).
@@ -42,17 +43,23 @@ This step does not require a code, but is necessary to perform to generate neuro
 1. In Step T1, import DTI image files. You will be prompted to add the b-table.
 2. In Step T2, import the .src file generated in Step T1, select DTI checkbox, Check b-table checkbox. Click on Run Reconstruction.
 3. In Step T3, import the .fib file generated in Step T2.
-
-3.1 *Region of Interest (ROI):*
+4. Tracking:
+*Region of Interest (ROI):*
 - For each root level, create a new region of interest by selecting Regions -> New region.  
 - Draw the region of interest by selecting a desired image slice and drawing around the spinal root. We suggest picking a slice just rostral to the DRG of a target root. Please note that for the default use of the pipeline, the fibers should be tracked individually for each root level (L6, L7 etc.), side(ventral/dorsal) and location (right/left).
 **Example:** for spinal roots L6 the user will have to track and save separately the following files: L6_r_d (right, dorsal), L6_l_d (left,dorsal), L6_r_v (right, ventral), L6_l_v (left, ventral).
 
-3.2 *Tracking parameters:*
-We suggest the following values: Angular Threshold=60, Min Length=20, Max Length=100, Terminate if=10000 Tracts.
+*Tracking parameters:*
+Tracking parameters may differ depending on the length of your specific dataset. We suggest the following values for a 8cm long dataset: Angular Threshold=60, Min Length=20, Max Length=100, Terminate if=10000 Tracts.
 Click on Fiber Tracking and visualize the result.
-Click on Tracts and save created tracts in the Output folder as a .txt file, named as previously described.
-Repeat for each root level, side and location.
+
+*Tract cleaning:*
+To ensure that most tracts generated are continuous from root into the spinal cord, cleaning is suggested. Find the level where the tracts enter the spinal cord, press Ctrl+S and draw a line across the spinal cord. This will ensure only tracts that passes that line will be kept.
+
+![Asset 8](https://user-images.githubusercontent.com/43448105/191318832-e0b5d978-e7cb-4d73-b1a8-889e8b4931b9.png)
+
+5. To save tracts, click on Tracts and save created tracts in the Output folder as a .txt file, named as previously described.
+6. Repeat for each root level, side and location.
 
 ## Step 2: Simulate neural recruitment
 
