@@ -52,7 +52,7 @@ Tracking parameters may differ depending on the length of your specific dataset.
 Click on Fiber Tracking and visualize the result.
 
 *Tract cleaning:*
-To ensure that most tracts generated are continuous from root into the spinal cord, cleaning is suggested. Find the level where the tracts enter the spinal cord, press Ctrl+S and draw a line across the spinal cord. This will ensure only tracts that passes that line will be kept.
+To ensure that most tracts generated are continuous from root into the spinal cord, cleaning is suggested. Find the level where the tracts enter the spinal cord, press Ctrl+S and draw a line across the spinal cord. This will ensure only tracts that pass that line will be kept.
 
 ![Asset 8](https://user-images.githubusercontent.com/43448105/191318832-e0b5d978-e7cb-4d73-b1a8-889e8b4931b9.png)
 
