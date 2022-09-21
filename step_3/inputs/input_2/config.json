@@ -1,0 +1,42 @@
+{
+    "pipeline_options": {
+        "project_name": "Catspine3.smash",
+        "surface_extraction": {
+            "scanner_alignment_1": [12.8,-20,12.1],
+            "scanner_alignment_2": [0, 0, 77],
+            "cropping_boundaries": [0,383,0,511],
+            "slice_indices": [10,700]
+        },
+        "electrode_placement": {
+            "template": "L6",
+            "contact_no": 23
+        },
+        "add_boundaries": {
+            "boundary_name": "ComplexBoundaries_V4.smash"
+        },
+        "place_neurons": {
+            "num_neurons": 200,
+            "fiber_names": ["Unmyelinated", "Small", "Medium", "Large"],
+            "neuron_group_name": "Neuron Bodies"
+        },
+        "wm_conductivities": {
+        },
+        "em_simulations": {
+        },
+        "run_neuron": {
+            "stim_params": {"current_uA":1000, "stim_start_ms":0.1, "stim_pw_ms":0.2}
+        },
+        "analysis": {
+            "recruitment_threshold_percent": []
+        },
+        "function": {
+            "stim_amp_uA": 500,
+            "stim_freq_Hz":50,
+            "recruitment_threshold_percent": [],
+            "start_volume_ml": 20,
+            "end_volume_ml": 20,
+            "simulation_time_ms": 10000, 
+            "repetitions": 1
+        }
+    }
+}
