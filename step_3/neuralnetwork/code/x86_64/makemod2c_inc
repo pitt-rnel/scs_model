@@ -1,0 +1,49 @@
+
+./AfferentFiber.c: .././mod_files/AfferentFiber.mod
+	@printf " -> $(C_GREEN)NMODL$(C_RESET) $<\n"
+	(cd ".././mod_files"; MODLUNIT=$(NRNUNITS) $(NOCMODL) AfferentFiber.mod -o "/home/jovyan/work/neuralnetwork/code/x86_64")
+
+./AfferentFiber.o: ./AfferentFiber.c
+	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
+	$(COMPILE) -I".././mod_files" $(INCLUDES) -fPIC -c $< -o $@
+
+./AXNODE.c: .././mod_files/AXNODE.mod
+	@printf " -> $(C_GREEN)NMODL$(C_RESET) $<\n"
+	(cd ".././mod_files"; MODLUNIT=$(NRNUNITS) $(NOCMODL) AXNODE.mod -o "/home/jovyan/work/neuralnetwork/code/x86_64")
+
+./AXNODE.o: ./AXNODE.c
+	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
+	$(COMPILE) -I".././mod_files" $(INCLUDES) -fPIC -c $< -o $@
+
+./INITIAL.c: .././mod_files/INITIAL.mod
+	@printf " -> $(C_GREEN)NMODL$(C_RESET) $<\n"
+	(cd ".././mod_files"; MODLUNIT=$(NRNUNITS) $(NOCMODL) INITIAL.mod -o "/home/jovyan/work/neuralnetwork/code/x86_64")
+
+./INITIAL.o: ./INITIAL.c
+	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
+	$(COMPILE) -I".././mod_files" $(INCLUDES) -fPIC -c $< -o $@
+
+./IntFireMn.c: .././mod_files/IntFireMn.mod
+	@printf " -> $(C_GREEN)NMODL$(C_RESET) $<\n"
+	(cd ".././mod_files"; MODLUNIT=$(NRNUNITS) $(NOCMODL) IntFireMn.mod -o "/home/jovyan/work/neuralnetwork/code/x86_64")
+
+./IntFireMn.o: ./IntFireMn.c
+	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
+	$(COMPILE) -I".././mod_files" $(INCLUDES) -fPIC -c $< -o $@
+
+./MOTONEURON_5HT.c: .././mod_files/MOTONEURON_5HT.mod
+	@printf " -> $(C_GREEN)NMODL$(C_RESET) $<\n"
+	(cd ".././mod_files"; MODLUNIT=$(NRNUNITS) $(NOCMODL) MOTONEURON_5HT.mod -o "/home/jovyan/work/neuralnetwork/code/x86_64")
+
+./MOTONEURON_5HT.o: ./MOTONEURON_5HT.c
+	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
+	$(COMPILE) -I".././mod_files" $(INCLUDES) -fPIC -c $< -o $@
+
+./MOTONEURON.c: .././mod_files/MOTONEURON.mod
+	@printf " -> $(C_GREEN)NMODL$(C_RESET) $<\n"
+	(cd ".././mod_files"; MODLUNIT=$(NRNUNITS) $(NOCMODL) MOTONEURON.mod -o "/home/jovyan/work/neuralnetwork/code/x86_64")
+
+./MOTONEURON.o: ./MOTONEURON.c
+	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
+	$(COMPILE) -I".././mod_files" $(INCLUDES) -fPIC -c $< -o $@
+
