@@ -1,0 +1,66 @@
+# [SECTION 1]:  Muscles names + delay for afferent fibers (optional)
+@1
+Bladder 1
+
+
+
+
+
+# [SECTION 2]: Common Cells per muscle: cellClass - name - number - required cell inputs (The name depend on the cell class; Motoneuron class - MnReal name, IntFireMn class - Mn name, AfferentFiber class - I... name for primary and II.. name for secondary fibers, IntFire class - any name)
+@2
+Motoneuron SPN 30
+Pud Pud 30
+AfferentFiber Pel 30
+IntFire IN_D 30
+IntFire IN_Mn 30
+IntFire IN_Mp 30
+IntFire FB 30
+IntFire PMC 30
+
+
+
+
+# [SECTION 3]: Special Cells per muscle or not muscle related (optional): muscle/groupName - cellClass - name - number - required cell inputs
+@3
+
+
+
+
+
+# [SECTION 4]: Common Network Connections, equal in each muscle: fromPopulation - toSingleCell - ratio - number - weight - typeOfSynapse (If toSingleCell is a real cell then typeOfSynapse can be either "inhibitory" or "excitatory", if toSingleCell is an artificialCell then typeOfSynapse has to be "artificial".)
+@4
+Pud IN_D unique 30 0.07 artificial
+Pud IN_Mn unique 30 0.06 artificial
+Pud IN_Mp unique 30 0.04 artificial
+IN_Mn SPN unique 30 -0.07 inhibitory
+IN_Mp SPN unique 30 0.03 excitatory
+IN_D SPN unique 30 0.15 excitatory
+SPN FB unique 30 0.05 artificial
+FB IN_D unique 30 -0.01 artificial
+Pel IN_D unique 30 0.05 artificial
+Pel PMC unique 30 0.05 artificial
+PMC IN_D unique 30 0.15 artificial
+
+
+
+
+
+
+
+
+# [SECTION 5]: Inter-muscles sensorimotor pathways
+@5
+
+
+
+
+
+# [SECTION 6]: Special network connections (optional): muscle/groupName - fromPopulation - muscle - toSingleCell - ratio - number - weight -type
+@6
+
+
+
+
+
+
+#end
