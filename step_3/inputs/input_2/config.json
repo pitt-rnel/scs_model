@@ -4,8 +4,8 @@
         "surface_extraction": {
             "scanner_alignment_1": [12.8,-20,12.1],
             "scanner_alignment_2": [0, 0, 77],
-            "cropping_boundaries": [0,383,0,511],
-            "slice_indices": [10,700]
+            "slice_indices": [0,383,0,511,9,699]
+            
         },
         "electrode_placement": {
             "template": "L6",
@@ -15,9 +15,8 @@
             "boundary_name": "ComplexBoundaries_V4.smash"
         },
         "place_neurons": {
-            "num_neurons": 200,
-            "fiber_names": ["Unmyelinated", "Small", "Medium", "Large"],
-            "neuron_group_name": "Neuron Bodies"
+            "num_neurons": 25,
+            "load_existing_neurons":0
         },
         "wm_conductivities": {
         },
@@ -27,12 +26,12 @@
             "stim_params": {"current_uA":1000, "stim_start_ms":0.1, "stim_pw_ms":0.2}
         },
         "analysis": {
-            "recruitment_threshold_percent": []
+            "recruitment_threshold_percent": [10,40,80]
         },
         "function": {
             "stim_amp_uA": 500,
             "stim_freq_Hz":50,
-            "recruitment_threshold_percent": [],
+            "Pud_recruitment_threshold": [10,40,80],
             "start_volume_ml": 20,
             "end_volume_ml": 20,
             "simulation_time_ms": 10000, 
