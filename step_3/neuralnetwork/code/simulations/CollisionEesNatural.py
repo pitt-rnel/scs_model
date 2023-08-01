@@ -26,7 +26,7 @@ class CollisionEesNatural(Simulation):
 	legnth, of its firing rate and of the stimulation frequency.
 	"""
 
-	def __init__(self, parallelContext, eesFrequencies, fiberDelays, fiberFiringRates, segmentToRecord = None, tstop = 5000):
+	def __init__(self, parallelContext, eesFrequencies, fiberDelays, fiberFiringRates, segmentToRecord = None, tstop=4000):
 		""" Object initialization.
 
 		Keyword arguments:
@@ -73,19 +73,21 @@ class CollisionEesNatural(Simulation):
 		""" Print the total simulation time and extract the results. """
 		Simulation._end_integration(self)
 		self._extract_results()
-
-	def save_results(self,name=""):
-		""" Save the simulation results.
+	"""
+		def save_results(self,name=""):
+		Save the simulation results.
 
 		Keyword arguments:
 		name -- string to add at predefined file name (default = "").
-		"""
+	
 		fileName = time.strftime("%Y_%m_%d_resultsCollisionEesNatural"+name+".p")
 		with open(self._resultsFolder+fileName, 'w') as pickle_file:
 			pickle.dump(self._results, pickle_file)
 			pickle.dump(self._eesFrequencies, pickle_file)
 			pickle.dump(self._fiberDelays, pickle_file)
 			pickle.dump(self._fiberFiringRates, pickle_file)
+	"""
+
 
 	def plot(self,delay,nColorLevels=None,name=""):
 		""" Plot the simulation results.
