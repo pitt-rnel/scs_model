@@ -173,7 +173,7 @@ class NeuralNetwork(object):
                 cellName = cellInfo[1]
                 cellNumber = cellInfo[2]
                 if len(cellInfo) >= 4:
-                    neuronParam = cellInfo[3]
+                    ees = cellInfo[3]
                 else:
                     neuronParam = None
                 cellId = self._create_cell_population(cellId, muscle, muscAfferentDelay, cellClass, cellName,
@@ -225,7 +225,9 @@ class NeuralNetwork(object):
                     # delay - parameter specific for the Afferent fibers
                     if neuronParam is not None:
                         delay = int(neuronParam)
+                        # print("define delay with ?")
                     elif muscAfferentDelay is not None:
+                        # print("define delay with 1")
                         delay = int(muscAfferentDelay)
                     else:
                         raise Exception("Please specify the afferent fiber delay")
@@ -237,8 +239,10 @@ class NeuralNetwork(object):
                     # delay - parameter specific for the Afferent fibers
                     if neuronParam is not None:
                         delay = int(neuronParam)
+                        # print("define delay with ?")
                     elif muscAfferentDelay is not None:
                         delay = int(muscAfferentDelay)
+                        # print("define delay with 1")
                     else:
                         raise Exception("Please specify the afferent fiber delay")
                     self.cells[muscle][cellName].append(AfferentFiber(delay))
@@ -418,14 +422,17 @@ class NeuralNetwork(object):
             # connect sources to targets
             self._connect(sourcesId, targetsId, conRatio, conNum, conWeight, synType)
 
-    def update_afferents_ap(self, time):
+    def update_afferents_ap(self, time, end_stim=False):
         """ Update all afferent fibers ation potentials. """
         # Iterate over all dictionaries
         for muscle in self.cells:
             for cellName in self.cells[muscle]:
                 if cellName in self._afferentsNames:
                     for cell in self.cells[muscle][cellName]:
-                        cell.update(time)
+                            cell.update(time, end_stim)
+            # leave a hook here: may edit the ees spikes here
+                        # print(cell.get_natural_spike_list())
+                        # print(cell.get_ees_spike_list())
 
     def set_afferents_fr(self, fr):
         """ Set the firing rate of the afferent fibers.
@@ -479,6 +486,8 @@ class NeuralNetwork(object):
                     apNumber[muscle][cellName] = None
 
         return apNumber
+    def get_nn_infos(self):
+        return self._infoMuscles
 
     def get_afferents_names(self):
         """ Return the afferents name. """
