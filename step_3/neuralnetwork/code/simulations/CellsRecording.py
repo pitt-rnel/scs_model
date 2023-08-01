@@ -2,6 +2,7 @@ from __future__ import print_function
 from mpi4py import MPI
 from neuron import h
 from .Simulation import Simulation
+from cells import AfferentFiber
 import time
 import numpy as np
 import scipy.sparse
@@ -77,7 +78,7 @@ class CellsRecording(Simulation):
                 for cell_list in self.cells[cellName]:
                     for i, c in enumerate(cell_list):
                         self._statesM[cellName][i].append(c.soma(0.5).v)
-                        if c.soma(0.5).v > -15:
+                        if c.soma(0.5).v > -25:
                             self.spikes[cellName][i].append(1.0)
                         else:
                             self.spikes[cellName][i].append(0.0)
@@ -108,8 +109,8 @@ class CellsRecording(Simulation):
         # calculate SPN average firing rate
         OUTFIRE = (1000 / window) * fire_sum / len(self.spikes['SPN'])
         self.outfire.append(OUTFIRE)
-        # bladder volume should never be negative
-        newp = max(0, self.bladder_vol[idx]) + (0.00172 * OUTFIRE ** 2 - 0.019 * OUTFIRE+1.05)
+        newp = max(0, self.bladder_vol[idx]) + (-0.000001075 * OUTFIRE ** 3 + 0.000625 * OUTFIRE ** 2 -0.049 * OUTFIRE + 0.224)
+	    
         # update bladder pressure
         self.bladderPressure[idx] = newp
 
@@ -121,7 +122,7 @@ class CellsRecording(Simulation):
         idx = int(h.t // update_pelvic_interval)
         x = self.bladderPressure[idx]
         # calculate the lower bound of pelvic afferent firing rate
-        FRlow = 0.000015 * x ** 3 - 0.0002 * x ** 2 + 0.05924 * x
+        FRlow =  0.00015 * x ** 3 - 0.0002 * x ** 2 + 0.05924 * x
         if FRlow <= 0:
             pelAf = np.Inf
         else:
@@ -130,7 +131,7 @@ class CellsRecording(Simulation):
         for i in range(len(self._statesM['Pel'])):
             self.cells['Pel'][0][i].set_firing_rate(pelAf)
 
-
+    # plot the membrane potential for given neuron
     def plot_statesM(self, neuron, name="", title="", block=True):
         """
         plot the membrane potential for given neuron
@@ -152,14 +153,14 @@ class CellsRecording(Simulation):
             plt.savefig(self._resultsFolder + fileName, format="pdf", transparent=True)
 
 
-    def save_SPNmembrane_potential(self):
+    def save_SPNmembrane_potential(self,dirname):
         """
         save SPN membrane potential
         :return:
         """
         if rank==0:
             spn_mem = self._statesM['SPN']
-            spn_name = '../../results/' + str(self.label) + '_' + time.strftime("%m_%d_%H_%M_") + '' + str(
+            spn_name = '../../results/' + dirname + '/'+ str(self.label) + '_' + time.strftime("%m_%d_%H_%M_") + '' + str(
                 self.initial_bladder_vol) + 'ml_' + str(self.freq) + 'Hz_' + 'SPN_mem.txt'
             f = open(spn_name, 'wt')
             for elem in spn_mem:
@@ -167,18 +168,18 @@ class CellsRecording(Simulation):
             f.close()
 
 
-    def save_bp_traces(self, name, data):
+    def save_bp_traces(self, name, data,dirname):
         """
         save data to txt file, mainly used for recording bladder pressure
         """
         if rank==0:
             file_name = str(self.label) + '_' + time.strftime("%m_%d_%H_%M_") + str(name) + '_'+str(self.initial_bladder_vol) +'ml_'+ str(self.freq)
-            f = open('../../results/' + file_name + ".txt", 'wt')
+            f = open('../../results/' + dirname + '/' + file_name + ".txt", 'wt')
             for elem in data:
                 f.write(str(elem) + ' ')
             f.close()
 
-    def save_data_to_sparse_matrix(self,block=True):
+    def save_data_to_sparse_matrix(self,dirname,block=True):
         """
         save the membrane potential of SPN, and spikes of all neuron
         components to txt/sparse matrix
@@ -191,7 +192,7 @@ class CellsRecording(Simulation):
                     data = self._statesM[name]
                 else:
                     data = self.spikes[name]
-                file_name = '../../results/' + str(self.label) + '_' + time.strftime("%m_%d_%H_%M_") + '' +str(self.initial_bladder_vol) + 'ml_'+str(self.freq)+ 'Hz_'+str(name)+'.npz'
+                file_name = '../../results/' +dirname+'/'+ str(self.label) + '_' + time.strftime("%m_%d_%H_%M_") + '' +str(self.initial_bladder_vol) + 'ml_'+str(self.freq)+ 'Hz_'+str(name)+'.npz'
                 np_data = np.array(data)
                 sparse_matrix = scipy.sparse.csc_matrix(np_data)
                 scipy.sparse.save_npz(file_name, sparse_matrix)
