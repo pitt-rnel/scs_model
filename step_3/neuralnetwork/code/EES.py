@@ -24,7 +24,7 @@ rank = comm.Get_rank()
 class EES(object):
 	""" Epidural Electrical Stimulation model. """
 
-	def __init__(self,parallelContext,neuralNetwork,amplitude,frequency,simTime, pulsesNumber=100000,species="cat"):
+	def __init__(self,parallelContext,neuralNetwork,amplitude,frequency,simTime, stim_start, stim_end, pulsesNumber=100000,species="cat"):
 		""" Object initialization.
 
 		Keyword arguments:
@@ -36,6 +36,7 @@ class EES(object):
 		maximum stimulation frequency imposed by the AfferentFiber model.
 		pulsesNumber: number of pulses to send (default 100000).
 		species -- rat or human (it loads different recruitment curves)
+		simTime: total simulation time
 		"""
 		self._pc = parallelContext
 		self._nn = neuralNetwork
@@ -54,7 +55,8 @@ class EES(object):
 			self._pc.set_gid2node(self._eesId, rank)
 			self._stim = h.NetStim()
 			self._stim.number = pulsesNumber
-			self._stim.start = self.simTime//2 # stimulation starts at the middle of simulation
+			self._stim.start = stim_start
+			self.stim_end = stim_end
 			self._stim.noise = 0
 
 			self._pulses = h.Vector()
@@ -80,17 +82,18 @@ class EES(object):
 		""" Load recruitment data from a previosly validated FEM model (Capogrosso et al 2013). """
 		if rank==0:
 			if self._species=='cat':
-				recI_MG = np.loadtxt('../../inputs/PudAff.txt')
-				recII_MG = np.loadtxt('../../inputs/PelAff.txt')
-				recMn_MG = np.loadtxt('../../inputs/SPN.txt')
+				recI_MG = np.loadtxt('../recruitmentData/PudAff-2300.txt')
+				recII_MG = np.loadtxt('../recruitmentData/PelAff-2300.txt')
+				recMn_MG = np.loadtxt('../recruitmentData/SPN-2300.txt')
 			else:
 				raise Exception("Need effective recruitment data.")
 
 			# the range of EES current
 			self._minCur = 0 #uA
-			self._maxCur = 1000 #uA
+			self._maxCur = 3000 #uA
 
 			nVal = recI_MG.size
+
 			allPercIf = recI_MG
 			allPercIIf = recII_MG
 			allPercMn = recMn_MG
@@ -159,6 +162,7 @@ class EES(object):
 		rnd.shuffle(ncIndexes)
 		for indx in ncIndexes[:int(nOn)]: netcons[indx].active(True)
 
+
 	def set_amplitude(self,amplitude,muscles=None):
 		""" Set the amplitude of stimulation.
 
@@ -174,7 +178,7 @@ class EES(object):
 
 		if rank == 0:
 			if isinstance(amplitude,int) or isinstance(amplitude,float):
-				if amplitude > self._minCur and amplitude <=self._maxCur:
+				if amplitude > self._minCur and amplitude <self._maxCur:
 					self._current = amplitude
 					self._percIf=  interpolate.splev(amplitude,self._tckIf)
 					if self._percIf<0:self._percIf=0
@@ -182,7 +186,8 @@ class EES(object):
 					if self._percIIf<0:self._percIIf=0
 					self._percMn =  interpolate.splev(amplitude,self._tckMn)
 					if self._percMn<0:self._percMn=0
-				else:                        
+
+				else:
 					raise Exception("Current amplitude out of bounds - min = "+str(self._minCur)+"/ max = "+str(self._maxCur))
 			# if recruitment rate is given, use percentage instead of current
 			elif isinstance(amplitude,list) and len(amplitude)==3:
@@ -191,7 +196,6 @@ class EES(object):
 				self._percIIf= amplitude[1]
 				self._percMn = amplitude[2]
 			else: raise Exception("badly defined amplitude")
-            
 
 		self._current = comm.bcast(self._current,root=0)
 		self._percIf = comm.bcast(self._percIf,root=0)
@@ -209,7 +213,7 @@ class EES(object):
 				elif cellType in self._nn.get_motoneurons_names():
 					self._activate_connections(self._connections[muscle][cellType],self._percMn)
 
-	def set_frequency(self,frequency):
+	def set_frequency(self,frequency, stim_stop=False):
 		""" Set the frequency of stimulation.
 
 		Note that currently all DoFs have the same percentage of afferents recruited.
@@ -218,14 +222,18 @@ class EES(object):
 		maximum stimulation frequency imposed by the AfferentFiber model.
 		"""
 		if rank == 0:
-			if frequency>0 and frequency<self._maxFrequency:
-				self._frequency = frequency
-				self._stim.interval = 1000.0/self._frequency
-			elif frequency<=0:
-				self._frequency = 0
+			if stim_stop:
 				self._stim.interval = 100 * self.simTime
-			elif frequency>=self._maxFrequency:
-				raise Exception
+				self._frequency = 0
+			else:
+				if frequency>0 and frequency<self._maxFrequency:
+					self._frequency = frequency
+					self._stim.interval = 1000.0/self._frequency
+				elif frequency<=0:
+					self._frequency = 0
+					self._stim.interval = 100 * self.simTime
+				elif frequency>=self._maxFrequency:
+					raise Exception
 
 	def get_amplitude(self,printFlag=False):
 		""" Return the stimulation amplitude and print it to screen.
