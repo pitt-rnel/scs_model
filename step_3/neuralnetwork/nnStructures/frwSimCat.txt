@@ -29,17 +29,17 @@ IntFire PMC 30
 
 # [SECTION 4]: Common Network Connections, equal in each muscle: fromPopulation - toSingleCell - ratio - number - weight - typeOfSynapse (If toSingleCell is a real cell then typeOfSynapse can be either "inhibitory" or "excitatory", if toSingleCell is an artificialCell then typeOfSynapse has to be "artificial".)
 @4
-Pud IN_D unique 30 0.07 artificial
+Pud IN_D unique 30 0.05 artificial
 Pud IN_Mn unique 30 0.06 artificial
 Pud IN_Mp unique 30 0.04 artificial
-IN_Mn SPN unique 30 -0.07 inhibitory
+IN_Mn SPN unique 30 -0.045 inhibitory
 IN_Mp SPN unique 30 0.03 excitatory
 IN_D SPN unique 30 0.15 excitatory
 SPN FB unique 30 0.05 artificial
 FB IN_D unique 30 -0.01 artificial
 Pel IN_D unique 30 0.05 artificial
-Pel PMC unique 30 0.05 artificial
-PMC IN_D unique 30 0.15 artificial
+Pel PMC unique 30 0.15 artificial
+PMC IN_D unique 30 0.08 artificial
 
 
 
