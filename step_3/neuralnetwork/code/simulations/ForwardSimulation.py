@@ -24,7 +24,7 @@ rank = comm.Get_rank()
 class ForwardSimulation(Simulation):
     """ Integration of a NeuralNetwork object over time given an input (ees or afferent input or both). """
 
-    def __init__(self, parallelContext, neuralNetwork, afferentInput=None, eesObject=None, eesModulation=None,
+    def __init__(self, parallelContext, neuralNetwork, stim_end, afferentInput=None, eesObject=None, eesModulation=None,
                  tStop=10000):
         """ Object initialization.
 
@@ -50,7 +50,7 @@ class ForwardSimulation(Simulation):
 
         if rank == 1:
             print("\nMPI execution: the cells are divided in the different hosts\n")
-
+        self.stim_end = stim_end
         self._nn = neuralNetwork
         self._Iaf = self._nn.get_primary_afferents_names()[0] if self._nn.get_primary_afferents_names() else []
         self._IIf = self._nn.get_secondary_afferents_names()[0] if self._nn.get_secondary_afferents_names() else []
@@ -119,15 +119,22 @@ class ForwardSimulation(Simulation):
     def _update(self):
         """ Update simulation parameters. """
         comm.Barrier()
-        self._nn.update_afferents_ap(h.t)
+        if h.t <= self.stim_end:
+            self._nn.update_afferents_ap(h.t, False)
+        else:
+            self._nn.update_afferents_ap(h.t, True)
         if self._afferentModulation:
             if h.t - self._timeUpdateAfferentsFr >= (self._dtUpdateAfferent - 0.5 * self._get_integration_step()):
                 self._timeUpdateAfferentsFr = h.t
                 self._set_afferents_fr(int(old_div(h.t, self._dtUpdateAfferent)))
                 self._nn.set_afferents_fr(self._afferentFr)
+                print("updated through afferent")
 
         if self._eesBinaryModulation:
-            if h.t - self._timeUpdateEES >= (self._eesParam['dt'] - 0.5 * self._get_integration_step()):
+            if h.t > self.stim_end and h.t - self._timeUpdateEES >= (self._eesParam['dt'] - 0.5 * self._get_integration_step()):
+                self._ees.set_frequency(stim_stop=True)
+                print("set netstim to stop firing, binary")
+            elif h.t <= self.stim_end and  h.t - self._timeUpdateEES >= (self._eesParam['dt'] - 0.5 * self._get_integration_step()):
                 ind = int(old_div(h.t, self._eesParam['dt']))
                 for muscle in self._eesParam['modulation']:
                     if self._eesParam['state'][muscle] != self._eesParam['modulation'][muscle][ind]:
@@ -136,13 +143,18 @@ class ForwardSimulation(Simulation):
                         else:
                             self._ees.set_amplitude([0, 0, 0], [muscle])
                         self._eesParam['state'][muscle] = self._eesParam['modulation'][muscle][ind]
+                print("updated through eesbinary")
 
         if self._eesProportionalModulation:
-            if h.t - self._timeUpdateEES >= (self._eesParam['dt'] - 0.5 * self._get_integration_step()):
+            if h.t > self.stim_end and h.t - self._timeUpdateEES >= (self._eesParam['dt'] - 0.5 * self._get_integration_step()):
+                self._ees.set_frequency(stim_stop=True)
+                print("set netstim to stop firing, proportional")
+            elif h.t <= self.stim_end and h.t - self._timeUpdateEES >= (self._eesParam['dt'] - 0.5 * self._get_integration_step()):
                 ind = int(old_div(h.t, self._eesParam['dt']))
                 for muscle in self._eesParam['modulation']:
                     amp = list(self._eesParam['maxAmp'] * self._eesParam['modulation'][muscle][ind])
                     self._ees.set_amplitude(amp, [muscle])
+                print("updated through eesproportion")
 
     def _end_integration(self):
         """ Print the total simulation time and extract the results. """
