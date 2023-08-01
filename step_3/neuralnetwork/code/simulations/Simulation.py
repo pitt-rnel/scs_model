@@ -37,7 +37,7 @@ class Simulation(object):
 
         # change from 0.5 to 1
         self.__maxStep = 0.5
-        self.__tstop = None
+        self.__tstop = None # a place holder
         self.__integrationStep = None
 
         if rank == 0:
