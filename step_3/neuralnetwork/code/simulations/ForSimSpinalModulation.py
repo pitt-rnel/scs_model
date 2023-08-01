@@ -34,8 +34,8 @@ class ForSimSpinalModulation(ForwardSimulation, CellsRecording):
         The simulation results are the cells membrane potential over time.
     """
 
-    def __init__(self, parallelContext, neuralNetwork, cells, modelType, freq, afferentInput=None, eesObject=None,
-                 eesModulation=None, tStop=10000, label=0, start_vol=20.0, end_vol=20.0):
+    def __init__(self, parallelContext, neuralNetwork, cells, modelType, freq, stim_start, stim_end, afferentInput=None, eesObject=None,
+                 eesModulation=None, tSimStop=6000, label=0, start_vol=20.0, end_vol=20.0):
         """ Object initialization.
 
         parallelContext -- Neuron parallelContext object.
@@ -61,25 +61,19 @@ class ForSimSpinalModulation(ForwardSimulation, CellsRecording):
         if rank == 1:
             print("\nWarning: mpi execution in this simulation is not supported and therfore useless.")
             print("Only the results of the first process are considered...\n")
-        CellsRecording.__init__(self, parallelContext, cells, modelType, freq, tStop, label, start_vol, end_vol)
-        ForwardSimulation.__init__(self, parallelContext, neuralNetwork, afferentInput, eesObject, eesModulation, tStop)
-        # change here. from 0.1 tp 1
+        CellsRecording.__init__(self, parallelContext, cells, modelType, freq, tSimStop, label, start_vol, end_vol)
+        # changed tstop here and it really detached everything
+        ForwardSimulation.__init__(self, parallelContext, neuralNetwork, stim_end, afferentInput, eesObject, eesModulation, tStop=tSimStop)
         h.dt = 0.1
         self._set_integration_step(h.dt)
-        self.tStop = tStop
-        self.start_time = self.tStop//2  #
-        # window for calculate spn firing freq
-        # self.window = self.tStop//20
-        # try to change window
+        self.tSimStop = tSimStop
+        self.stim_start = stim_start
+        self.stim_end = stim_end
         self.window = 500
         self.update_bladder_interval = h.dt
-        # self.cells = cells
-        # self.cellNum = len(self.cells['Pud'][0])
-        # self.modelType = modelType
-        # self.freq = freq
-        # set pelvic update time interval
         self.update_pelvic_interval = h.dt
         self.label = label
+        self.ees = eesObject
 
     def _initialize(self):
         ForwardSimulation._initialize(self)
@@ -96,84 +90,25 @@ class ForSimSpinalModulation(ForwardSimulation, CellsRecording):
     def _updatebladder(self):
         CellsRecording._updateBladder(self, self.window, self.update_bladder_interval)
 
-    # def plot(self, muscle, cells, name=""):
-    #     """ Plot the simulation results. """
-    #     if rank == 0:
-    #         fig, ax = plt.subplots(figsize=(16, 7))
-    #         ax.plot(self._meanFr[muscle][cells])
-    #         ax.set_title('Cells mean firing rate')
-    #         ax.set_runel(" Mean firing rate (Hz)")
-    #         fileName = time.strftime("%Y_%m_%d_CellsRecordingMeanFR_" + name + ".pdf")
-    #         plt.savefig(self._resultsFolder + fileName, format="pdf", transparent=True)
-    #         CellsRecording.plot(self, name)
-
-    # def raster_plot(self, name="", plot=True):
-    #     if rank == 0:
-    #         cellsGroups = gt.naive_string_clustering(list(self._statesM.keys()))
-    #         # number of cells in each cell type
-    #         cellNums = len(self._statesM['Pud'])
-    #         for cellNameList in cellsGroups:
-    #             for cell_name in cellNameList:
-    #                 if cell_name == 'Pud' or cell_name == 'Pel':
-    #                     states = self._statesM[cell_name][0]
-    #                     for i in range(1, cellNums):
-    #                         states = np.vstack((states, self._statesM[cell_name][i]))
-    #                 else:
-    #                     states = self.spikes[cell_name][0]
-    #                     for i in range(1, cellNums):
-    #                         states = np.vstack((states, self.spikes[cell_name][i]))
-    #                 shape = (len(states), len(states[0]))
-    #                 states = coo_matrix(states)
-    #                 fig = plt.figure()
-    #                 ax = fig.add_subplot(111, facecolor='black')
-    #                 ax.plot(states.col, states.row, 's', color='white', ms=0.5)
-    #
-    #                 ax.set_xlim(0, states.shape[1])
-    #                 ax.set_ylim(-1, states.shape[0])
-    #                 ax.set_aspect('auto')
-    #                 for spine in ax.spines.values():
-    #                     spine.set_visible(False)
-    #                 ax.invert_yaxis()
-    #                 ax.set_title(name, fontsize=10)
-    #                 # Move left and bottom spines outward by 10 points
-    #                 ax.spines['left'].set_position(('outward', 1))  # both, change 10 to 20
-    #                 ax.spines['bottom'].set_position(('outward', 1))
-    #                 # Hide the right and top spines
-    #                 ax.spines['right'].set_visible(False)
-    #                 ax.spines['top'].set_visible(False)
-    #                 ax.xaxis.set_ticks_position('bottom')
-    #                 tStop = self._get_tstop()
-    #                 plt.yticks(fontsize=8)
-    #                 plt.xticks(fontsize=8)
-    #                 plt.ylabel(cell_name, fontsize=8)
-    #                 plt.xlabel('simulation Time (ms)', fontsize=8)
-    #
-    #                 fileName = time.strftime("%m_%d_%H_%M_raster_plot_" + name + "_" + cell_name + ".pdf")
-    #                 plt.savefig(self._resultsFolder + fileName, format="pdf", transparent=False)
-
-    def save_simulation_data(self, name="", title="", block=False):
-        CellsRecording.save_bp_traces(self, "bp", self.bladderPressure)
-        CellsRecording.save_SPNmembrane_potential(self)
-        CellsRecording.save_data_to_sparse_matrix(self)
+    def save_simulation_data(self, name="", title="", dirname="", block=False):
+        CellsRecording.save_bp_traces(self, "bp", self.bladderPressure,dirname)
+        CellsRecording.save_SPNmembrane_potential(self,dirname)
+        CellsRecording.save_data_to_sparse_matrix(self,dirname)
 
     def plot_membrane_potatial(self, name="", title="", block=False):
-        CellsRecording.plot_statesM(self, 'SPN', name, title, block,)
+        CellsRecording.plot_statesM(self, 'SPN', name, title, block)
+        CellsRecording.plot_statesM(self, 'Pud', name, title, block)
+        CellsRecording.plot_statesM(self, 'Pel', name, title, block)
+        CellsRecording.plot_statesM(self, 'PMC', name, title, block)
         CellsRecording.plot_statesM(self, 'IN_D', name, title, block)
         CellsRecording.plot_statesM(self, 'IN_Mn', name, title, block)
         CellsRecording.plot_statesM(self, 'IN_Mp', name, title, block)
         CellsRecording.plot_statesM(self, 'FB', name, title, block)
 
-    # def save_results(self, name):
-    #     if rank == 0:
-    #         fileName = time.strftime("%Y_%m_%d_FSSM_nSpikes") + name + ".p"
-    #         with open(self._resultsFolder + fileName, 'w') as pickle_file:
-    #             pickle.dump(self._nSpikes, pickle_file)
-    #             pickle.dump(self._nActiveCells, pickle_file)
-
 
     def bladder_pressure_mean(self):
-        pre = np.mean(self.bladderPressure[int(self.start_time / 2 / h.dt):int(self.start_time / h.dt)])
-        stim = np.mean(self.bladderPressure[int(self.start_time / h.dt):])
+        pre = np.mean(self.bladderPressure[int(self.stim_start / 2 / h.dt):int(self.stim_start / h.dt)])
+        stim = np.mean(self.bladderPressure[int(self.stim_start / h.dt):])
         ratio = stim / pre
         return (pre, stim, ratio)
 
