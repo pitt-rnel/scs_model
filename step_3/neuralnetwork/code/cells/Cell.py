@@ -13,7 +13,7 @@ class Cell(object):
 		""" Object destruction. """
 		pass
 
-	def connect_to_target(self,target,weight=0,delay=1):
+	def  connect_to_target(self,target,weight=0,delay=1):
 		""" Connect the current cell to a target cell and return the netCon object. 
 
 		Keyword arguments:

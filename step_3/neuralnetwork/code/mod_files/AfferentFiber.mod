@@ -9,6 +9,7 @@ NEURON {
 
 PARAMETER {
 	EES = 0
+
 }
 
 ASSIGNED {
@@ -31,6 +32,9 @@ FUNCTION M(){
 
 NET_RECEIVE (w){
 	if (w==-3){
+		EES=1
+	}
+	if (w==-2){
 		EES=1
 	}
 	if (w!=-3 && flag==1){

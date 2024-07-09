@@ -7,10 +7,11 @@ import sys
 sys.path.append('../code')
 from neuron import h
 from cells import Motoneuron
-from cells import IntFireMn
 from cells import IntFire
-from cells import AfferentFiber
+from cells import InMn
+from cells import Pel
 from cells import Pud
+from cells import PMC
 import random as rnd
 import numpy as np
 from tools import seed_handler as sh
@@ -46,11 +47,7 @@ class NeuralNetwork(object):
 
 
         # Initialize the lists containing the names of the different types of cells.
-        self._realMotoneuronsNames = []
-        self._intMotoneuronsNames = []
         self._motoneuronsNames = []
-        self._primaryAfferentsNames = []
-        self._secondaryAfferentsNames = []
         self._afferentsNames = []
         self._interNeuronsNames = []
 
@@ -77,8 +74,6 @@ class NeuralNetwork(object):
 
         if rank == 0:
             section = None
-            sensorimotorConnections = None
-            sensorimotorMatrix = None
             for line in open('../nnStructures/'+self._inputFile, "r"):
                 if line[0] == "#" or line[0] == "\n":
                     continue
@@ -92,27 +87,6 @@ class NeuralNetwork(object):
                     self._infoSpecialCells.append(line.strip("\n").split())
                 elif section == 4:
                     self._infoCommonMuscleConnections.append(line.strip("\n").split())
-                """
-                # for sensory motor connection, temporarily not demanded in our model design
-                elif section == 5:
-                    if line[0] == "+":
-                        dictName = line[1:].strip("\n")
-                        self._infoInterMuscSensorimotorConnections[dictName] = {}
-                        sensorimotorConnections = False
-                        sensorimotorMatrix = False
-                    elif "Connections" in line:
-                         sensorimotorConnections = True
-                         self._infoInterMuscSensorimotorConnections[dictName]["connections"]=[]
-                    elif "WeightsMatrix" in line:
-                         sensorimotorConnections = False
-                         sensorimotorMatrix = True
-                         self._infoInterMuscSensorimotorConnections[dictName]["matrix"]=[]
-                    elif sensorimotorConnections:
-                        self._infoInterMuscSensorimotorConnections[dictName]["connections"].append(line.strip("\n").split())
-                    elif sensorimotorMatrix:
-                        self._infoInterMuscSensorimotorConnections[dictName]["matrix"].append(line.strip("\n").split())
-                elif section == 6: self._infoSpecialConnections.append(line.strip("\n").split())	
-                """
 
         self._infoMuscles = comm.bcast(self._infoMuscles, root=0)
         self._infoCommonCellsInMuscles = comm.bcast(self._infoCommonCellsInMuscles, root=0)
@@ -137,11 +111,11 @@ class NeuralNetwork(object):
                 cellName = cellInfo[1]
                 self.cellsId[muscle][cellName] = []
                 self.cells[muscle][cellName] = []
-                if (cellClass == "Motoneuron" or cellClass == "IntFireMn") and self.recordMotoneurons:
+                if (cellClass == "Motoneuron") and self.recordMotoneurons:
                     self.actionPotentials[muscle][cellName] = []
-                elif cellClass == "AfferentFiber" or cellClass == "Pud" and self.recordAfferents:
+                elif cellClass in ["Pud", "Pel", "PMC"] and self.recordAfferents:
                     self.actionPotentials[muscle][cellName] = []
-                elif cellClass == "IntFire" and self.recordIntFire:
+                elif cellClass in ["IntFire", "InMn"] and self.recordIntFire:
                     self.actionPotentials[muscle][cellName] = []
 
         # Add special cells (specific for some muscles or not muscle related)
@@ -156,11 +130,11 @@ class NeuralNetwork(object):
 
             self.cellsId[groupOrMuscle][cellName] = []
             self.cells[groupOrMuscle][cellName] = []
-            if (cellClass == "Motoneuron" or cellClass == "IntFireMn") and self.recordMotoneurons:
+            if (cellClass == "Motoneuron") and self.recordMotoneurons:
                 self.actionPotentials[groupOrMuscle][cellName] = []
-            elif cellClass == "AfferentFiber" or cellClass == "Pud" and self.recordAfferents:
+            elif cellClass in ["Pel", "Pud", "PMC"] and self.recordAfferents:
                 self.actionPotentials[groupOrMuscle][cellName] = []
-            elif cellClass == "IntFire" and self.recordIntFire:
+            elif cellClass in ["IntFire", "InMn"] and self.recordIntFire:
                 self.actionPotentials[groupOrMuscle][cellName] = []
 
     def _create_cells(self):
@@ -192,9 +166,6 @@ class NeuralNetwork(object):
             cellId = self._create_cell_population(cellId, groupOrMuscle, muscAfferentDelay, cellClass, cellName,
                                                   cellNumber, neuronParam)
 
-        self._motoneuronsNames = self._intMotoneuronsNames + self._realMotoneuronsNames
-        self._afferentsNames = self._primaryAfferentsNames + self._secondaryAfferentsNames
-
     def _create_cell_population(self, cellId, muscle, muscAfferentDelay, cellClass, cellName, cellNumber,
                                 neuronParam=None):
         """ Create cells populations. """
@@ -205,48 +176,52 @@ class NeuralNetwork(object):
                 self.cellsId[muscle][cellName].append(cellId)
                 # Tell this host it has this cellId
                 self._pc.set_gid2node(cellId, rank)
-                # Create the cell
-                if cellClass == "IntFireMn":
-                    # List containing all integrate and fire motoneurons names
-                    if not cellName in self._intMotoneuronsNames: self._intMotoneuronsNames.append(cellName)
-                    intfire_mn = IntFireMn()
-                    self.cells[muscle][cellName].append(intfire_mn)
-                elif cellClass == "Motoneuron":
+                if cellClass == "Motoneuron":
                     # List containing all realistic motoneurons names
-                    if not cellName in self._realMotoneuronsNames:
-                        self._realMotoneuronsNames.append(cellName)
-                    # drug - parameter specific to the Mn
+                    if not cellName in self._motoneuronsNames:
+                        self._motoneuronsNames.append(cellName)
                     drug = False
-                    if neuronParam == "drug": drug = True
+                    if neuronParam == "drug":
+                        drug = True
                     self.cells[muscle][cellName].append(Motoneuron(drug))
                 elif cellClass == "Pud":
-                    if not cellName in self._primaryAfferentsNames:
-                        self._primaryAfferentsNames.append(cellName)
-                    # delay - parameter specific for the Afferent fibers
+                    if not cellName in self._afferentsNames:
+                        self._afferentsNames.append(cellName)
                     if neuronParam is not None:
                         delay = int(neuronParam)
                     elif muscAfferentDelay is not None:
                         delay = int(muscAfferentDelay)
                     else:
                         raise Exception("Please specify the afferent fiber delay")
-                    self.cells[muscle][cellName].append(Pud.Pud(delay))
-                elif cellClass == "AfferentFiber":
-                    # change II to pel
-                    if not cellName in self._secondaryAfferentsNames:
-                        self._secondaryAfferentsNames.append(cellName)
-                    # delay - parameter specific for the Afferent fibers
+                    self.cells[muscle][cellName].append(Pud(delay))
+                elif cellClass == "Pel":
+                    if not cellName in self._afferentsNames:
+                        self._afferentsNames.append(cellName)
                     if neuronParam is not None:
                         delay = int(neuronParam)
                     elif muscAfferentDelay is not None:
                         delay = int(muscAfferentDelay)
                     else:
                         raise Exception("Please specify the afferent fiber delay")
-                    self.cells[muscle][cellName].append(AfferentFiber(delay))
+                    self.cells[muscle][cellName].append(Pel(delay))
+                elif cellClass == "PMC":
+                    if not cellName in self._afferentsNames:
+                        self._afferentsNames.append(cellName)
+                    if neuronParam is not None:
+                        delay = int(neuronParam)
+                    elif muscAfferentDelay is not None:
+                        delay = int(muscAfferentDelay)
+                    else:
+                        raise Exception("Please specify the afferent fiber delay")
+                    self.cells[muscle][cellName].append(PMC(delay))
                 # check for interneurons intfire 4
                 elif cellClass == "IntFire":
                     # List containing all interneurons names
                     if not cellName in self._interNeuronsNames: self._interNeuronsNames.append(cellName)
                     self.cells[muscle][cellName].append(IntFire())
+                elif cellClass == "InMn":
+                    if not cellName in self._interNeuronsNames: self._interNeuronsNames.append(cellName)
+                    self.cells[muscle][cellName].append(InMn())
                 else:
                     raise Exception("Unknown cell in the network instructions.... (" + str(cellClass) + ")")
                 # Associate the cell with this host and id, the nc is also necessary to use this cell as a source for all other hosts
@@ -254,19 +229,19 @@ class NeuralNetwork(object):
                 self._pc.cell(cellId, nc)
 
                 # Record cells APs
-                if (cellClass == "Motoneuron" or cellClass == "IntFireMn") and self.recordMotoneurons:
+                if (cellClass == "Motoneuron") and self.recordMotoneurons:
                     self.actionPotentials[muscle][cellName].append(h.Vector())
                     nc.record(self.actionPotentials[muscle][cellName][-1])
-                elif cellClass == "AfferentFiber" or cellClass == "Pud" and self.recordAfferents:
+                elif cellClass in ["Pel", "Pud", "PMC"] and self.recordAfferents:
                     self.actionPotentials[muscle][cellName].append(h.Vector())
                     nc.record(self.actionPotentials[muscle][cellName][-1])
-                elif cellClass == "IntFire" and self.recordIntFire:
+                elif cellClass in ["IntFire", "InMn"] and self.recordIntFire:
                     self.actionPotentials[muscle][cellName].append(h.Vector())
                     nc.record(self.actionPotentials[muscle][cellName][-1])
             cellId += 1
         return cellId
 
-    def _connect(self, sourcesId, targetsId, conRatio, conNum, conWeight, synType, conDelay=1):
+    def _connect(self, sourcesId, targetsId, conRatio, conNum, conWeight, synType, conDelay=0.5):
         """ Connect source cells to target cells.
 
         Keyword arguments:
@@ -283,7 +258,7 @@ class NeuralNetwork(object):
         artificial cells or "excitatory"/"inhibitory" for realistic cell models.
         conDelay -- Delay of the synapse in ms (default = 1).
         """
-        noisePerc = 0.2
+        noisePerc = 0.1
         for targetId in targetsId:
             # check whether this id is associated with a cell in this host
             if not self._pc.gid_exists(targetId):
@@ -312,14 +287,9 @@ class NeuralNetwork(object):
                     source = rnd.choice(sourcesId)
                 else:
                     raise Exception("Wrong connections ratio parameter")
-
-                # if i in range(0, 30) and targetId in range(180, 210):
-                #     source_cell = self._pc.gid2cell(i)
-                #     target_cell = self._pc.gid2cell(targetId)
-                #     nc = source_cell.connect_to_target(target_cell,weight=5,delay=1)
-                # else:
                 nc = self._pc.gid_connect(source, target)
-                nc.weight[0] = rnd.normalvariate(conWeight, conWeight * noisePerc)
+                # print(type(source))
+                nc.weight[0] = conWeight
                 nc.delay = conDelay + rnd.normalvariate(0.25, 0.25 * noisePerc)
                 self._connections.append(nc)
         comm.Barrier()
@@ -345,87 +315,18 @@ class NeuralNetwork(object):
                 # Type of synapse
                 synType = connection[5]
                 # connect sources to targets
-                # print("source:",sourcesId)
-                #
-                # print("target:",targetsId)
-                #
-                # print("weight:",conWeight)
-                #
-                # print("---")
                 self._connect(sourcesId, targetsId, conRatio, conNum, conWeight, synType)
-                # print("source:", sourcesId)
-                #
-                # print("target:", targetsId)
-                #
-                # print("weight:", conWeight)
-                #
-                # print("---")
+                print("weight:", conWeight)
 
 
-
-    def _create_inter_muscles_sensorimotor_connections(self):
-        """ Create sensorimotor connections between muscles."""
-
-        for pathway in self._infoInterMuscSensorimotorConnections:
-            connections = self._infoInterMuscSensorimotorConnections[pathway]["connections"]
-            matrix = self._infoInterMuscSensorimotorConnections[pathway]["matrix"]
-            if not len(matrix) - 1 == len(matrix[0]) - 1 == len(self._infoMuscles):
-                raise Exception
-            # The first row is header
-            for M2weights, M1 in zip(matrix[1:], self._infoMuscles):
-                for weight, M2 in zip(M2weights[1:], self._infoMuscles):
-                    if not float(weight) == 0:
-                        if M1[0] is M2[0]: raise Exception
-                        for connection in connections:
-                            # List of source cells ids
-                            sourcesId = self.cellsId[M1[0]][connection[1]]
-                            # gather the sources all together
-                            sourcesId = comm.gather(sourcesId, root=0)
-                            if rank == 0: sourcesId = sum(sourcesId, [])
-                            sourcesId = comm.bcast(sourcesId, root=0)
-                            # List of target cells ids
-                            targetsId = self.cellsId[M2[0]][connection[3]]
-                            # Ratio of connection
-                            conRatio = connection[4]
-                            # Number of connections
-                            conNum = int(int(connection[5]) * float(weight))
-                            # Weight of connections
-                            conWeight = float(connection[6])
-                            # Type of synapse
-                            synType = connection[7]
-                            # connect sources to targets
-                            self._connect(sourcesId, targetsId, conRatio, conNum, conWeight, synType)
-
-    def _create_special_connections(self):
-        """ Create connections specific to single muscles or cell groups. """
-        for connection in self._infoSpecialConnections:
-            # List of source cells ids
-            sourcesId = self.cellsId[connection[0]][connection[1]]
-            # gather the sources all together
-            sourcesId = comm.gather(sourcesId, root=0)
-            if rank == 0: sourcesId = sum(sourcesId, [])
-            sourcesId = comm.bcast(sourcesId, root=0)
-            # List of target cells ids
-            targetsId = self.cellsId[connection[2]][connection[3]]
-            # Ratio of connection
-            conRatio = connection[4]
-            # Number of connections
-            conNum = int(connection[5])
-            # Weight of connections
-            conWeight = float(connection[6])
-            # Type of synapse
-            synType = connection[7]
-            # connect sources to targets
-            self._connect(sourcesId, targetsId, conRatio, conNum, conWeight, synType)
-
-    def update_afferents_ap(self, time):
+    def update_afferents_ap(self, time, end_stim=False):
         """ Update all afferent fibers ation potentials. """
         # Iterate over all dictionaries
         for muscle in self.cells:
             for cellName in self.cells[muscle]:
                 if cellName in self._afferentsNames:
                     for cell in self.cells[muscle][cellName]:
-                        cell.update(time)
+                            cell.update(time, end_stim)
 
     def set_afferents_fr(self, fr):
         """ Set the firing rate of the afferent fibers.
@@ -448,57 +349,12 @@ class NeuralNetwork(object):
                 if cellName in self._afferentsNames:
                     for cell in self.cells[muscle][cellName]: cell.initialise()
 
-    def get_ap_number(self, cellNames):
-        """ Return the number of action potentials fired for the different recorded cells.
-
-        The number of Ap is returned only to the main process (rank=0).
-        Keyword arguments:
-        cellNames -- List of cell names from which we want to get the number of action potentials. """
-
-        apNumber = {}
-        for muscle in self.cells:
-            apNumber[muscle] = {}
-            for cellName in cellNames:
-                if (cellName in self._afferentsNames and self.recordAfferents) \
-                        or (cellName in self._motoneuronsNames and self.recordMotoneurons) \
-                        or (cellName in self._interNeuronsNames and self.recordIntFire):
-                    apNumber[muscle][cellName] = []
-                    for apVector in self.actionPotentials[muscle][cellName]:
-                        apNumber[muscle][cellName].append(apVector.size())
-                else:
-                    raise Exception
-
-                if sizeComm <= 1: continue
-
-                tempApNumberAll = comm.gather(apNumber[muscle][cellName], root=0)
-                if rank == 0:
-                    apNumber[muscle][cellName] = np.concatenate([tempApNumberAll[0], tempApNumberAll[1]])
-                    for i in range(2, sizeComm):
-                        apNumber[muscle][cellName] = np.concatenate([apNumber[muscle][cellName], tempApNumberAll[i]])
-                else:
-                    apNumber[muscle][cellName] = None
-
-        return apNumber
+    def get_nn_infos(self):
+        return self._infoMuscles
 
     def get_afferents_names(self):
         """ Return the afferents name. """
         return self._afferentsNames
-
-    def get_primary_afferents_names(self):
-        """ Return the primary afferents name. """
-        return self._primaryAfferentsNames
-
-    def get_secondary_afferents_names(self):
-        """ Return the secondary afferents name. """
-        return self._secondaryAfferentsNames
-
-    def get_real_motoneurons_names(self):
-        """ Return the real motoneurons name. """
-        return self._realMotoneuronsNames
-
-    def get_intf_motoneurons_names(self):
-        """ Return the int fire name. """
-        return self._intMotoneuronsNames
 
     def get_motoneurons_names(self):
         """ Return the motoneurons names. """
@@ -507,7 +363,3 @@ class NeuralNetwork(object):
     def get_interneurons_names(self):
         """ Return the inteurons names. """
         return self._interNeuronsNames
-
-    def get_mn_info(self):
-        """ Return the connection informations. """
-        return self._infoCommonMuscleConnections, self._infoSpecialConnections

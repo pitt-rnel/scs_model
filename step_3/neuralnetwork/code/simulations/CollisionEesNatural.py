@@ -6,7 +6,7 @@ from past.utils import old_div
 from mpi4py import MPI
 from neuron import h
 from .Simulation import Simulation
-from cells import AfferentFiber
+from cells import Pel
 import random as rnd
 import time
 import numpy as np
@@ -26,7 +26,7 @@ class CollisionEesNatural(Simulation):
 	legnth, of its firing rate and of the stimulation frequency.
 	"""
 
-	def __init__(self, parallelContext, eesFrequencies, fiberDelays, fiberFiringRates, segmentToRecord = None, tstop = 5000):
+	def __init__(self, parallelContext, eesFrequencies, fiberDelays, fiberFiringRates, segmentToRecord = None, tstop=4000):
 		""" Object initialization.
 
 		Keyword arguments:
@@ -58,7 +58,7 @@ class CollisionEesNatural(Simulation):
 		self._connect_ees_to_fibers()
 
 		self._set_tstop(tstop)
-		self._set_integration_step(AfferentFiber.get_update_period())
+		self._set_integration_step(Pel.get_update_period())
 
 
 	"""
@@ -73,19 +73,21 @@ class CollisionEesNatural(Simulation):
 		""" Print the total simulation time and extract the results. """
 		Simulation._end_integration(self)
 		self._extract_results()
-
-	def save_results(self,name=""):
-		""" Save the simulation results.
+	"""
+		def save_results(self,name=""):
+		Save the simulation results.
 
 		Keyword arguments:
 		name -- string to add at predefined file name (default = "").
-		"""
+	
 		fileName = time.strftime("%Y_%m_%d_resultsCollisionEesNatural"+name+".p")
 		with open(self._resultsFolder+fileName, 'w') as pickle_file:
 			pickle.dump(self._results, pickle_file)
 			pickle.dump(self._eesFrequencies, pickle_file)
 			pickle.dump(self._fiberDelays, pickle_file)
 			pickle.dump(self._fiberFiringRates, pickle_file)
+	"""
+
 
 	def plot(self,delay,nColorLevels=None,name=""):
 		""" Plot the simulation results.
@@ -144,7 +146,7 @@ class CollisionEesNatural(Simulation):
 		for i in range(len(self._eesFrequencies)):
 			for j in range(len(self._fiberDelays)):
 				for k in range(len(self._fiberFiringRates)):
-					self._fiberList[i][j].append(AfferentFiber(self._fiberDelays[j]))
+					self._fiberList[i][j].append(Pel(self._fiberDelays[j]))
 					if self._segmentToRecord is None:
 						self._fiberList[i][j][k].set_firing_rate(self._fiberFiringRates[k])
 					if self._segmentToRecord is not None:
@@ -168,7 +170,7 @@ class CollisionEesNatural(Simulation):
 				for k in range(len(self._fiberFiringRates)):
 					self._netconList[i][j].append(h.NetCon(self._eesList[i],self._fiberList[i][j][k].cell))
 					self._netconList[i][j][k].delay = 1
-					self._netconList[i][j][k].weight[0] = AfferentFiber.get_ees_weight()
+					self._netconList[i][j][k].weight[0] = Pel.get_ees_weight()
 
 	def _update_afferents(self):
 		""" Update the afferents fiber state. """

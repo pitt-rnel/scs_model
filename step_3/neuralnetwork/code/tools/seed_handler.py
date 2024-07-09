@@ -22,7 +22,7 @@ def load_seed():
         with open(seedValFile, "rb") as f:
             seed = int(f.read())
         with open(seedValFile, "wb") as f:
-            f.write(str(seed+1).encode())
+             f.write(str(seed+1).encode())
     seed = comm.bcast(seed,root=0)
     return seed
 

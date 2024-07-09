@@ -29,6 +29,8 @@ def main():
     parser.add_argument("inputFile", help="neural network structure file")
     parser.add_argument("time", help="total simulation time", type=float, default=10000)
     parser.add_argument("rounds", help="number of simulations", type=int, default=5)
+    parser.add_argument("stim_start", help="the time external stimulation starts", type=float, default=1000)
+    parser.add_argument("stim_end", help="the time external stimulation stops", type=float, default=4000)
     parser.add_argument("eesFrequency", help="ees frequency", type=float, default=33.0)
     parser.add_argument("eesAmplitude", help="ees amplitude applied on both pud and pel", type=float, default=300)
     parser.add_argument("Pud", help="pudendal nerve recruitment rate", type=float, default=1.0)
@@ -57,31 +59,27 @@ def main():
     else:
         amp = [args.Pud, args.Pel, args.SPN]
 
+    # define directory name
+    dir_name = str(args.Pud) + '-' + str(args.Pel) + '/'
+
     # for each given stim frequency initiate the neural network and calculate
     for freq in freq_case:
         for i in range(args.rounds):
             print("round: " + str(i + 1))  # the current simulation round
-            simrun = bladderModel("frwSimCat.txt", freq, amp, args.time, args.label, args.start_vol, args.end_vol)
+            simrun = bladderModel("frwSimCat.txt", freq, amp, args.time, args.stim_start, args.stim_end, args.label, args.start_vol, args.end_vol)
             simrun.createNetwork()
 
             # record the average bp/auc of pre/post stimulation during simulation
             bp_mean[freq].append((simrun.bp_pre, simrun.bp_post, simrun.bp_ratio))
             # auc[freq].append((simrun.auc_pre, simrun.auc_post, simrun.auc_ratio))
-            
-            # record the recruited percentage of each afferent
-            recruited_percentage = simrun.percFiberActEes
 
     try:
-        res_file = open('../../results/' + str(args.label) + time.strftime(
-            "_%m_%d_%H_%M") + "_bp-%.1f pud-%.1f pel-%.1f spn at %.1f.txt" % (recruited_percentage[1],recruited_percentage[2], recruited_percentage[3], freq),
+        res_file = open('../../results/' +dir_name + str(args.label) + time.strftime(
+            "_%m_%d_%H_%M") + "_bp-%.1f pud-%.1f pel-%.1f spn at %.1f.txt" % (args.Pud, args.Pel, args.SPN, freq),
                         'wt')
         res_file.write(str(bp_mean))
         res_file.close()
-        # res_file2 = open('../../results/' + str(args.label) + time.strftime(
-        #     "_%m_%d_%H_%M") + "_auc-%.1f pud-%.1f pel-%.1f spn at %.1f.txt" % (args.Pud, args.Pel, args.SPN, freq),
-        #                  'wt')
-        # res_file2.write(str(auc))
-        # res_file2.close()
+
 
     except:
         print('unable to write the file')

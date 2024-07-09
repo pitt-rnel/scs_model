@@ -12,7 +12,7 @@ if not "comm" in locals(): comm = MPI.COMM_WORLD
 if not "sizeComm" in locals(): sizeComm = comm.Get_size()
 if not "rank" in locals(): rank = comm.Get_rank()
 
-def exctract_firings(apListVector,maxTime = 0, samplingRate = 1000.):
+def exctract_firings(apListVector: object, maxTime: object = 0, samplingRate: object = 1000.) -> object:
 	""" Extract cells firings from different hosts and return them to host 0.
 
 	Keyword arguments:

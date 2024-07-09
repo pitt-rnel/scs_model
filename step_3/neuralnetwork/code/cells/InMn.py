@@ -1,7 +1,7 @@
 from .Cell import Cell
 from neuron import h
 
-class IntFire(Cell):
+class InMn(Cell):
 	""" Integrate and Fire cell.
 
 	This class implement and IntFire4 Neuron object.
@@ -13,9 +13,8 @@ class IntFire(Cell):
 		Cell.__init__(self)
 
 		#Create IntFire4
-		self.cell = h.IntFire4()
-		self.cell.taue= 3
-		self.cell.taui1=5
-		self.cell.taui2=10
-		self.cell.taum= 30 #0.2 nF divided g 20 nS
+		self.cell = h.IntFire1()
+		self.tau = 5
+		self.cell.refrac=300
+
 

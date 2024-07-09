@@ -3,11 +3,6 @@ from builtins import str
 from builtins import object
 from mpi4py import MPI
 from neuron import h
-import numpy as np
-from scipy import interpolate
-from cells import Motoneuron
-from cells import IntFireMn
-from cells import AfferentFiber
 from EES import EES
 import random as rnd
 import time

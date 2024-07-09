@@ -19,7 +19,7 @@ class Motoneuron(Cell):
 	The geometry is scaled to match the rat dimension.
 	This model offers also the possibility to simulate the effect of 5-HT as in Booth et al. 1997.
 	"""
-	__eesWeight = -3 # Weight of a connection between an ees object and this cell
+	__eesWeight = 0.1 # Weight of a connection between an ees object and this cell
 
 	def __init__(self,drug=False):
 		""" Object initialization.
@@ -77,10 +77,11 @@ class Motoneuron(Cell):
 		self.soma.insert('motoneuron') # Insert the Neuron motoneuron mechanism developed by McIntyre 2002
 		if self._drug: self.soma.gcak_motoneuron *= 0.6 # Add the drug effect as in Booth et al 1997
 
+		self.initSegment.nseg=5 # this line disappeared
 		self.initSegment.L = 1000
 		self.initSegment.diam = 10
 		self.initSegment.insert('initial') # Insert the Neuorn initial mechanism developed by McIntyre
-		self.initSegment.gnap_initial = -50 # change 0 to -50
+		self.initSegment.gnap_initial = 0 # change -50 to 0 -->why did I changed this to -50?
 		self.initSegment.Ra = 200
 		self.initSegment.cm = 2
 
@@ -92,7 +93,7 @@ class Motoneuron(Cell):
 			dendrite.cm = 2
 			dendrite.insert('pas') # Insert the Neuron pass mechanism
 			dendrite.g_pas = 7.7e-6 # Real data from Fleshman 1988 cell 35/4
-			dendrite.e_pas = -85.0 # changed -75 to -85
+			dendrite.e_pas = -70.0
 
 		for node,paranode in zip(self.node,self.paranode):
 			node.nseg = 1
@@ -110,7 +111,7 @@ class Motoneuron(Cell):
 			paranode.cm = 0.1/(2*9.15*paranode.diam+2*30)
 			paranode.insert('pas')
 			paranode.g_pas = 0.001/(2*9.15*paranode.diam+2*30)
-			paranode.e_pas = -90 # change -85 to -90
+			paranode.e_pas = -85
 
 
 	def _build_topology(self):
@@ -137,7 +138,7 @@ class Motoneuron(Cell):
 		type -- type of synapse to be created. This could be:
 		1) "excitatory" to create an excitatory synapse positioned on the dendritic tree
 		2) "inhibitory" to create an inhibitory synapse positioned on the soma
-		3) "ees" to create a synapse that mimic the recruitmend induced by electrical
+		3) "ees" to create a synapse that mimic the recruitment induced by electrical
 		stimulation; in this case the synapse is positioned on the axon.
 		"""
 
@@ -151,19 +152,20 @@ class Motoneuron(Cell):
 			elif n>self._nDendrites: n=self._nDendrites-1
 			x = rnd.random()
 			syn = h.ExpSyn(self.dendrite[int(n)](x))
-			syn.tau = 1.5
+			syn.tau = 0.3
 			syn.e = 0
 			self.synapses.append(syn)
 		elif type=="inhibitory":
 			syn = h.Exp2Syn(self.soma(0.5))
-			syn.tau1 = 1.5
-			syn.tau2 = 4
-			syn.e = -85
+			syn.tau1 = 1.5# change from 1.5 to 5
+			syn.tau2 = 2 # change from 2 to 10
+			syn.e = -67.5 # change from -67.5 to -70
 			self.synapses.append(syn)
 		elif type=="ees":
 			syn = h.ExpSyn(self.node[3](0.5))
+			# syn = h.ExpSyn(self.soma(0.5)) # change to soma to see if it's node's problem
 			syn.tau = 0.1
-			syn.e = -85
+			syn.e = 50
 			self.synapses.append(syn)
 		return syn
 
@@ -179,7 +181,14 @@ class Motoneuron(Cell):
 		weight -- the weight of the connection (default 0)
 		delay -- communication time delay in ms (default 1)
 		"""
-		nc = h.NetCon(self.soma(0.5)._ref_v, target, -30, delay, weight, sec=self.soma)
+		# source, target, threshold, delay, weight
+		# nc = h.NetCon(self.soma(0.5)._ref_v, target, -30, delay, weight, sec=self.soma)
+		# print('weight: ', weight, "ref_v: ", self.soma(0.5)._ref_v)
+		nc = h.NetCon(self.node[-1](1)._ref_v, target, sec=self.node[-1])
+		nc.delay = delay
+		nc.weight[0] = weight
+		nc.threshold = -30
+
 		return nc
 
 	def is_artificial(self):

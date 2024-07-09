@@ -37,7 +37,7 @@ class Simulation(object):
 
         # change from 0.5 to 1
         self.__maxStep = 0.5
-        self.__tstop = None
+        self.__tstop = None # a place holder
         self.__integrationStep = None
 
         if rank == 0:
@@ -151,7 +151,7 @@ class Simulation(object):
             self._integrate()
             self._update()
             self._print_sim_status()
-            self._updatebladder()
+            # self._updatebladder()
         self._end_integration()
 
     def set_results_folder(self, resultsFolderPath):
